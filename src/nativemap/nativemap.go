@@ -1,10 +1,9 @@
-package benchmark
+package nativemap
 
-import (
-)
+import ()
 
 type NativeMap struct {
-	data map[interface{}] interface{}
+	data map[interface{}]interface{}
 }
 
 func NewNativeMap() *NativeMap {
@@ -13,19 +12,18 @@ func NewNativeMap() *NativeMap {
 
 func (nativemap *NativeMap) Get(k interface{}) (interface{}, bool) {
 	v, ok := nativemap.data[k]
-	return v,ok
+	return v, ok
 }
 
-func (nativemap *NativeMap) Put(k,v interface{}) interface{} {
-	/* Save old value */
-	old, _ := nativemap.data[k]
+func (nativemap *NativeMap) Put(k, v interface{}) interface{} {
+	old := nativemap.data[k]
 	nativemap.data[k] = v
 	return old
 }
 
-func (nativemap *NativeMap) Remove(k interface{}) (interface{}, bool){
+func (nativemap *NativeMap) Remove(k interface{}) (interface{}, bool) {
 	/* Save old value */
-	old, ok := nativemap.data[k];
+	old, ok := nativemap.data[k]
 	if ok {
 		delete(nativemap.data, k)
 	}
@@ -33,5 +31,5 @@ func (nativemap *NativeMap) Remove(k interface{}) (interface{}, bool){
 }
 
 func (nativemap *NativeMap) clear() {
-	nativemap.data = make(map[interface{}] interface{})
+	nativemap.data = make(map[interface{}]interface{})
 }
