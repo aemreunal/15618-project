@@ -66,6 +66,7 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 helps test cache misses for those keys
 */
 func benchmarkConcurrentWrites(m IMap, b *testing.B) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
@@ -83,6 +84,7 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B) {
 */
 func benchmarkLotsWritesFewReads(m IMap, b *testing.B) {
 	keys := []int64{}
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
