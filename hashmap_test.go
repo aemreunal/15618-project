@@ -9,6 +9,7 @@ import (
 	"lockmap"
 	"rwlockmap"
 	"pmap"
+	"gotomic"
 )
 
 const (
@@ -263,6 +264,10 @@ func BenchmarkParallelMapPutGetBasic(b *testing.B) {
 	benchmarkPutGetBasic(pmap.NewParallelMap(), b)
 }
 
+func BenchmarkGotomicMapPutGetBasic(b *testing.B) {
+	benchmarkPutGetBasic(gotomic.NewGotomicMap(), b)
+}
+
 /* 1. =======================Lots of concurrent writes======================= */
 func BenchmarkLockMapLotsWrite(b *testing.B) {
 	benchmarkConcurrentWrites(lockmap.NewLockMap(), b)
@@ -276,6 +281,9 @@ func BenchmarkParallelMapLotsWrite(b *testing.B) {
 	benchmarkConcurrentWrites(pmap.NewParallelMap(), b)
 }
 
+func BenchmarkGotomicMapLotsWrite(b *testing.B) {
+	benchmarkConcurrentWrites(gotomic.NewGotomicMap(), b)
+}
 /* 2. ==================Lots of concurrent writes, few reads================= */
 func BenchmarkLockMapLotsWritesFewReads(b *testing.B) {
 	benchmarkLotsWritesFewReads(lockmap.NewLockMap(), b)
@@ -287,6 +295,10 @@ func BenchmarkRWLockMapLotsWritesFewReads(b *testing.B) {
 
 func BenchmarkParallelMapLotsWritesFewReads(b *testing.B) {
 	benchmarkLotsWritesFewReads(pmap.NewParallelMap(), b)
+}
+
+func BenchmarkGotomicMapLotsWritesFewReads(b *testing.B) {
+	benchmarkLotsWritesFewReads(gotomic.NewGotomicMap(), b)
 }
 
 /* 3. ================Lots of concurrent writes, lots of reads=============== */
@@ -302,6 +314,9 @@ func BenchmarkParallelMapLotsWritesLotsReads(b *testing.B) {
 	benchmarkLotsWritesLotsReads(pmap.NewParallelMap(), b)
 }
 
+func BenchmarkGotomicMapLotsWritesLotsReads(b *testing.B) {
+	benchmarkLotsWritesLotsReads(gotomic.NewGotomicMap(), b)
+}
 /* 4. =======================Lots of concurrent reads======================== */
 func BenchmarkNativeMapLotsReads(b *testing.B) {
 	m := nativemap.NewNativeMap()
@@ -326,6 +341,13 @@ func BenchmarkRWLockMapLotsReads(b *testing.B) {
 
 func BenchmarkParallelMapLotsReads(b *testing.B) {
 	m := pmap.NewParallelMap()
+	/* Initialize a big map */
+	InitializeMap(NumKeysInBigMap, m)
+	benchmarkLotsReads(NumKeysInBigMap, m, b)
+}
+
+func BenchmarkGotomicMapLotsReads(b *testing.B) {
+	m := gotomic.NewGotomicMap()
 	/* Initialize a big map */
 	InitializeMap(NumKeysInBigMap, m)
 	benchmarkLotsReads(NumKeysInBigMap, m, b)
