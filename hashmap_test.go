@@ -18,7 +18,7 @@ const (
 	NumWritesInWriteOnlyTest          = 1024 * 1024 * 16 // 16 M
 	NumWritesInRWTest                 = 1024 * 1024 * 16 // 16 M
 	NumReadsInReadOnlyTest            = 1024 * 1024 * 16 // 16 M
-	NumIterationInConcurrentReadWrite = 1024 * 16
+	NumIterationInConcurrentReadWrite = 10 * 1024 * 16
 	NumWriteDeleteIter                = 1
 	NumKeysInBigMap                   = 1024 * 1024 * 16
 	NumKeysInSmallMap                 = 1024 * 16
