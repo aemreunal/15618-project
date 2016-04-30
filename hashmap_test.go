@@ -172,7 +172,7 @@ func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int6
 3.3. Interleaved sequential writes and reads
 */
 func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int64) {
-	currentKey = 0;
+	currentKey := 0
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -277,7 +277,7 @@ func getNextNormalRandom(numKeys int) int {
 *     cache behavior when reading from an unchanging table
  */
 func benchmarkLotsReadsSequential(m IMap, b *testing.B, numKeys, numReads int64) {
-	currentKey = 0;
+	currentKey := 0
 	/* Initialize the map */
 	InitializeMap(numKeys, m)
 	b.ResetTimer()
