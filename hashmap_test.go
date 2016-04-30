@@ -14,12 +14,11 @@ import (
 )
 
 const (
-	StrKeyLen                         = 8
 	NumWritesInWriteOnlyTestSmall     = 1024 * 1024 * 16 // 16 M
 	NumWritesInRWTestSmall            = 1024 * 1024 * 16 // 16 M
 	NumReadsInReadOnlyTestSmall       = 1024 * 1024 * 16 // 16 M
 	NumIterationInConcurrentReadWrite = 10 * 1024 * 16
-	NumWriteDeleteIter                = 1
+	NumWriteDeleteIter                = 5
 	NumKeysInBigMap                   = 1024 * 1024 * 16      // 16 M
 	NumKeysInSmallMap                 = 1024 * 16
 	WriteRatioHigh                    = 1000
