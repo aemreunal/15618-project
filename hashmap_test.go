@@ -15,16 +15,17 @@ import (
 
 const (
 	StrKeyLen                         = 8
-	NumWritesInWriteOnlyTest          = 1024 * 1024 * 16 // 16 M
-	NumWritesInRWTest                 = 1024 * 1024 * 16 // 16 M
-	NumReadsInReadOnlyTest            = 1024 * 1024 * 16 // 16 M
+	NumWritesInWriteOnlyTestSmall     = 1024 * 1024 * 16 // 16 M
+	NumWritesInRWTestSmall            = 1024 * 1024 * 16 // 16 M
+	NumReadsInReadOnlyTestSmall       = 1024 * 1024 * 16 // 16 M
 	NumIterationInConcurrentReadWrite = 10 * 1024 * 16
 	NumWriteDeleteIter                = 1
-	NumKeysInBigMap                   = 1024 * 1024 * 16
+	NumKeysInBigMap                   = 1024 * 1024 * 16      // 16 M
 	NumKeysInSmallMap                 = 1024 * 16
 	WriteRatioHigh                    = 1000
 	WriteRatioLow                     = 2
 	chars                             = "0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz"
+
 )
 
 type IMap interface {
@@ -65,12 +66,12 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 /* 1. Lots of writes to uniformly random keys, no reads, fits to memory ->
 helps test cache misses for those keys
 */
-func benchmarkConcurrentWrites(m IMap, b *testing.B) {
+func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
-			for i := 0; i < NumWritesInWriteOnlyTest; i++ {
+			for i := int64(0); i < numWrites; i++ {
 				k := rand.Int63()
 				v := k
 				m.Put(k, v)
@@ -82,29 +83,25 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B) {
 /*
 2. Lots of writes to uniformly random keys, few reads, fits to memory
 */
-func benchmarkLotsWritesFewReads(m IMap, b *testing.B) {
-	keys := []int64{}
+func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
-			for i := 0; i < NumWritesInRWTest; i++ {
+			for i := int64(0); i < numWrites; i++ {
 				/* Do a read */
 				if i > 0 && i%WriteRatioHigh == 0 {
-					idx := rand.Int63n(int64(len(keys)))
-					v, ok := m.Get(keys[idx])
+					k := rand.Int63()
+					v, ok := m.Get(k)
 					if ok {
-						if v != keys[idx] {
-							b.Error("Wrong value for key", keys[idx], ". Expect ", keys[idx], ". Got ", v)
+						if v != k {
+							b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
 						}
-					} else {
-						b.Error("Failed to get key ", keys[idx])
 					}
 				} else {
 					/* Do write */
 					k := rand.Int63()
 					v := k
-					keys = append(keys, k)
 					m.Put(k, v)
 				}
 			}
@@ -116,30 +113,25 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B) {
 3. Lots of writes to uniformly random keys, lots of uniformly random reads,
 fits into memory
 */
-
-func benchmarkLotsWritesLotsReads(m IMap, b *testing.B) {
-	keys := []int64{}
+func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
-			for i := 0; i < NumWritesInRWTest; i++ {
+			for i := int64(0); i < numWrites; i++ {
 				/* Do a read */
-				if i > 0 && i%WriteRatioLow == 0 {
-					idx := rand.Int63n(int64(len(keys)))
-					v, ok := m.Get(keys[idx])
+				if i > 0 && i % WriteRatioLow == 0 {
+					key := rand.Int63()
+					v, ok := m.Get(key)
 					if ok {
-						if v != keys[idx] {
-							b.Error("Wrong value for key", keys[idx], ". Expect ", keys[idx], ". Got ", v)
+						if v != key {
+							b.Error("Wrong value for key", key, ". Expect ", key, ". Got ", v)
 						}
-					} else {
-						b.Error("Failed to get key ", keys[idx])
 					}
 				} else {
 					/* Do write */
 					k := rand.Int63()
 					v := k
-					keys = append(keys, k)
 					m.Put(k, v)
 				}
 			}
@@ -153,16 +145,16 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B) {
 *	   then lots of uniformly random reads ->
 *     cache behavior when reading from an unchanging table
  */
-func benchmarkLotsReads(m IMap, b *testing.B) {
+func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int64) {
 	/* Initialize the map */
-	InitializeMap(NumKeysInBigMap, m)
+	InitializeMap(numKeys, m)
 	b.ResetTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			rand.Seed(time.Now().UTC().UnixNano())
-			for i := 0; i < NumReadsInReadOnlyTest; i++ {
-				k := rand.Int63n(NumKeysInBigMap)
+			for i := int64(0); i < numReads; i++ {
+				k := rand.Int63n(numKeys)
 				v, ok := m.Get(k)
 				if ok {
 					if v != k {
@@ -251,7 +243,6 @@ func benchmarkConcurrentWriteDeleteWrite(m IMap, b *testing.B) {
 	})
 }
 
-
 /* 0. ==========================Basic Put/Get Test============================*/
 func BenchmarkNativeMapPutGetBasic(b *testing.B) {
 	benchmarkPutGetBasic(nativemap.NewNativeMap(), b)
@@ -279,92 +270,91 @@ func BenchmarkConcurrentMapPutGetBasic(b *testing.B) {
 
 /* 1. =======================Lots of concurrent writes======================= */
 func BenchmarkLockMapLotsWrite(b *testing.B) {
-	benchmarkConcurrentWrites(lockmap.NewLockMap(), b)
+	benchmarkConcurrentWrites(lockmap.NewLockMap(), b, NumWritesInWriteOnlyTestSmall)
 }
 
 func BenchmarkRWLockMapLotsWrite(b *testing.B) {
-	benchmarkConcurrentWrites(rwlockmap.NewRWLockMap(), b)
+	benchmarkConcurrentWrites(rwlockmap.NewRWLockMap(), b, NumWritesInWriteOnlyTestSmall)
 }
 
 func BenchmarkParallelMapLotsWrite(b *testing.B) {
-	benchmarkConcurrentWrites(pmap.NewParallelMap(), b)
+	benchmarkConcurrentWrites(pmap.NewParallelMap(), b, NumWritesInWriteOnlyTestSmall)
 }
 
 func BenchmarkGotomicMapLotsWrite(b *testing.B) {
-	benchmarkConcurrentWrites(gotomic.NewGotomicMap(), b)
+	benchmarkConcurrentWrites(gotomic.NewGotomicMap(), b, NumWritesInWriteOnlyTestSmall)
 }
 
 func BenchmarkConcurrentMapLotsWrite(b *testing.B) {
-	benchmarkConcurrentWrites(concurrent.NewConcurrentMap(), b)
+	benchmarkConcurrentWrites(concurrent.NewConcurrentMap(), b, NumWritesInWriteOnlyTestSmall)
 }
 
 /* 2. ==================Lots of concurrent writes, few reads================= */
 func BenchmarkLockMapLotsWritesFewReads(b *testing.B) {
-	benchmarkLotsWritesFewReads(lockmap.NewLockMap(), b)
+	benchmarkLotsWritesFewReads(lockmap.NewLockMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkRWLockMapLotsWritesFewReads(b *testing.B) {
-	benchmarkLotsWritesFewReads(rwlockmap.NewRWLockMap(), b)
+	benchmarkLotsWritesFewReads(rwlockmap.NewRWLockMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkParallelMapLotsWritesFewReads(b *testing.B) {
-	benchmarkLotsWritesFewReads(pmap.NewParallelMap(), b)
+	benchmarkLotsWritesFewReads(pmap.NewParallelMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkGotomicMapLotsWritesFewReads(b *testing.B) {
-	benchmarkLotsWritesFewReads(gotomic.NewGotomicMap(), b)
+	benchmarkLotsWritesFewReads(gotomic.NewGotomicMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkConcurrentMapLotsWritesFewReads(b *testing.B) {
-	benchmarkLotsWritesFewReads(concurrent.NewConcurrentMap(), b)
+	benchmarkLotsWritesFewReads(concurrent.NewConcurrentMap(), b, NumWritesInRWTestSmall)
 }
 /* 3. ================Lots of concurrent writes, lots of reads=============== */
 func BenchmarkLockMapLotsWritesLotsReads(b *testing.B) {
-	benchmarkLotsWritesLotsReads(lockmap.NewLockMap(), b)
+	benchmarkLotsWritesLotsReads(lockmap.NewLockMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkRWLockMapLotsWritesLotsReads(b *testing.B) {
-	benchmarkLotsWritesLotsReads(lockmap.NewLockMap(), b)
+	benchmarkLotsWritesLotsReads(lockmap.NewLockMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkParallelMapLotsWritesLotsReads(b *testing.B) {
-	benchmarkLotsWritesLotsReads(pmap.NewParallelMap(), b)
+	benchmarkLotsWritesLotsReads(pmap.NewParallelMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkGotomicMapLotsWritesLotsReads(b *testing.B) {
-	benchmarkLotsWritesLotsReads(gotomic.NewGotomicMap(), b)
+	benchmarkLotsWritesLotsReads(gotomic.NewGotomicMap(), b, NumWritesInRWTestSmall)
 }
 
 func BenchmarkConcurrentMapLotsWritesLotsReads(b *testing.B) {
-	benchmarkLotsWritesLotsReads(concurrent.NewConcurrentMap(), b)
+	benchmarkLotsWritesLotsReads(concurrent.NewConcurrentMap(), b, NumWritesInRWTestSmall)
 }
 
 /* 4. =======================Lots of concurrent reads======================== */
 func BenchmarkNativeMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(nativemap.NewNativeMap(), b)
+	benchmarkLotsReads(nativemap.NewNativeMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
 func BenchmarkLockMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(lockmap.NewLockMap(), b)
+	benchmarkLotsReads(lockmap.NewLockMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
 func BenchmarkRWLockMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(rwlockmap.NewRWLockMap(), b)
+	benchmarkLotsReads(rwlockmap.NewRWLockMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
 func BenchmarkParallelMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(pmap.NewParallelMap(), b)
+	benchmarkLotsReads(pmap.NewParallelMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
 func BenchmarkGotomicMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(gotomic.NewGotomicMap(), b)
+	benchmarkLotsReads(gotomic.NewGotomicMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
 func BenchmarkConcurrentMapLotsReads(b *testing.B) {
-	benchmarkLotsReads(concurrent.NewConcurrentMap(), b)
+	benchmarkLotsReads(concurrent.NewConcurrentMap(), b, NumKeysInBigMap, NumReadsInReadOnlyTestSmall)
 }
 
-/* 5. ================1, 2, 3, 4 but very large tables (>16 GB)===============*/
 /* 6. 1, 2, 3, 4 but with a particular set of keys read/wrote more frequently */
 /* 7. ========1, 2, 3, 4 but with reading and writing sequential keys=========*/
 
