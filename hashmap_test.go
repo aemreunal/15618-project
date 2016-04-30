@@ -62,7 +62,7 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 	}
 }
 
-/* 1. Lots of writes to uniformly random keys, no reads, fits to memory ->
+/* 1.1. Lots of writes to uniformly random keys, no reads, fits to memory ->
 helps test cache misses for those keys
 */
 func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
@@ -72,6 +72,42 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := int64(0); i < numWrites; i++ {
 				k := rand.Int63()
+				v := k
+				m.Put(k, v)
+			}
+		}
+	})
+}
+
+/* 1.2. Lots of writes to normally random keys, no reads, fits to memory ->
+helps test cache misses for those keys
+*/
+func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				k := getNextNormalRandom(numWrites)
+				v := k
+				m.Put(k, v)
+			}
+		}
+	})
+}
+
+/* 1.3. Lots of writes to sequential keys, no reads, fits to memory ->
+helps test cache misses for those keys
+*/
+func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int64) {
+	currentKey := 0
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				k := currentKey
+				currentKey = (currentKey + 1) % numWrites
 				v := k
 				m.Put(k, v)
 			}
