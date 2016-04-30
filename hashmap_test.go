@@ -25,7 +25,6 @@ const (
 	WriteRatioHigh                    = 1000
 	WriteRatioLow                     = 2
 	chars                             = "0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz"
-
 )
 
 type IMap interface {
@@ -140,7 +139,7 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
 }
 
 /*
-*  4. Initialize a large table (fitting into memory)
+*  4.1. Initialize a large table (fitting into memory)
 *     (do not test the initialization part),
 *	   then lots of uniformly random reads ->
 *     cache behavior when reading from an unchanging table
@@ -166,6 +165,47 @@ func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int64) {
 			}
 		}
 	})
+}
+
+/*
+*  4.2. Initialize a large table (fitting into memory)
+*     (do not test the initialization part),
+*	   then lots of normally distributed random reads ->
+*     cache behavior when reading from an unchanging table
+ */
+func benchmarkLotsReadsNormalDist(m IMap, b *testing.B, numKeys, numReads int64) {
+	/* Initialize the map */
+	InitializeMap(numKeys, m)
+	b.ResetTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numReads; i++ {
+				k := getNextNormalRandom(numKeys)
+				v, ok := m.Get(k)
+				if ok {
+					if v != k {
+						b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+					}
+				} else {
+					b.Error("Failed to get key ", k)
+				}
+			}
+		}
+	})
+}
+
+func getNextNormalRandom(numKeys int) int {
+	mean := numKeys / 2
+	stdDev := numKeys / 6
+	var next int
+	for {
+		next = rand.NormFloat64() * stdDev + mean
+		if next >= 0 && next < numKeys {
+			return int(next)
+		}
+	}
 }
 
 func Writer(do, done chan bool, m IMap, nKeys, numWrites int64, b *testing.B) {
