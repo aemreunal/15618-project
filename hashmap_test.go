@@ -80,7 +80,7 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
 }
 
 /*
-2. Lots of writes to uniformly random keys, few reads, fits to memory
+2.1. Lots of writes to uniformly random keys, few reads, fits to memory
 */
 func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -100,6 +100,68 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 				} else {
 					/* Do write */
 					k := rand.Int63()
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+2.2. Lots of writes to normally random keys, few reads, fits to memory
+*/
+func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i%WriteRatioHigh == 0 {
+					k := getNextNormalRandom(numWrites)
+					v, ok := m.Get(k)
+					if ok {
+						if v != k {
+							b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := getNextNormalRandom(numWrites)
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+2.3. Lots of writes to sequential keys, few reads, fits to memory
+*/
+func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int64) {
+	currentWriteKey := 0
+	currentReadKey := 0
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i%WriteRatioHigh == 0 {
+					k := currentReadKey
+					currentReadKey = (currentReadKey + 1) % numWrites
+					v, ok := m.Get(k)
+					if ok {
+						if v != k {
+							b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := currentWriteKey
+					currentWriteKey = (currentWriteKey + 1) % numWrites
 					v := k
 					m.Put(k, v)
 				}
