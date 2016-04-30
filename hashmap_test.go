@@ -109,7 +109,7 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 }
 
 /*
-3. Lots of writes to uniformly random keys, lots of uniformly random reads,
+3.1. Lots of writes to uniformly random keys, lots of uniformly random reads,
 fits into memory
 */
 func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
@@ -130,6 +130,68 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
 				} else {
 					/* Do write */
 					k := rand.Int63()
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+3.2. Lots of writes to normally distributed random keys, lots of normally
+distributed random reads, fits into memory
+*/
+func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i % WriteRatioLow == 0 {
+					key := getNextNormalRandom(numWrites)
+					v, ok := m.Get(key)
+					if ok {
+						if v != key {
+							b.Error("Wrong value for key", key, ". Expect ", key, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := getNextNormalRandom(numWrites)
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+3.3. Interleaved sequential writes and reads
+*/
+func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int64) {
+	currentKey = 0;
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Write if i is even, read if i is odd */
+				if i % 2 == 0 {
+					/* Do a read */
+					key := currentKey
+					v, ok := m.Get(key)
+					if ok {
+						if v != key {
+							b.Error("Wrong value for key", key, ". Expect ", key, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do a write */
+					k := currentKey
+					currentKey = (currentKey + 1) % numKeys
 					v := k
 					m.Put(k, v)
 				}
