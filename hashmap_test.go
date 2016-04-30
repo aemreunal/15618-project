@@ -208,6 +208,37 @@ func getNextNormalRandom(numKeys int) int {
 	}
 }
 
+/*
+*  4.3. Initialize a large table (fitting into memory)
+*     (do not test the initialization part),
+*	   then lots of sequential reads ->
+*     cache behavior when reading from an unchanging table
+ */
+func benchmarkLotsReadsSequential(m IMap, b *testing.B, numKeys, numReads int64) {
+	currentKey = 0;
+	/* Initialize the map */
+	InitializeMap(numKeys, m)
+	b.ResetTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numReads; i++ {
+				k := currentKey;
+				currentKey = (currentKey + 1) % numKeys
+				v, ok := m.Get(k)
+				if ok {
+					if v != k {
+						b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+					}
+				} else {
+					b.Error("Failed to get key ", k)
+				}
+			}
+		}
+	})
+}
+
 func Writer(do, done chan bool, m IMap, nKeys, numWrites int64, b *testing.B) {
 	<-do
 	for i := int64(0); i < numWrites; i++ {
