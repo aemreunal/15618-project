@@ -24,7 +24,6 @@ const (
 	WriteRatioHigh                    = 1000
 	WriteRatioLow                     = 2
 	chars                             = "0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz"
-
 )
 
 type IMap interface {
@@ -62,7 +61,7 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 	}
 }
 
-/* 1. Lots of writes to uniformly random keys, no reads, fits to memory ->
+/* 1.1. Lots of writes to uniformly random keys, no reads, fits to memory ->
 helps test cache misses for those keys
 */
 func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
@@ -79,8 +78,44 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int64) {
 	})
 }
 
+/* 1.2. Lots of writes to normally random keys, no reads, fits to memory ->
+helps test cache misses for those keys
+*/
+func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				k := getNextNormalRandom(numWrites)
+				v := k
+				m.Put(k, v)
+			}
+		}
+	})
+}
+
+/* 1.3. Lots of writes to sequential keys, no reads, fits to memory ->
+helps test cache misses for those keys
+*/
+func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int64) {
+	currentKey := 0
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				k := currentKey
+				currentKey = (currentKey + 1) % numWrites
+				v := k
+				m.Put(k, v)
+			}
+		}
+	})
+}
+
 /*
-2. Lots of writes to uniformly random keys, few reads, fits to memory
+2.1. Lots of writes to uniformly random keys, few reads, fits to memory
 */
 func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -109,7 +144,69 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int64) {
 }
 
 /*
-3. Lots of writes to uniformly random keys, lots of uniformly random reads,
+2.2. Lots of writes to normally random keys, few reads, fits to memory
+*/
+func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i%WriteRatioHigh == 0 {
+					k := getNextNormalRandom(numWrites)
+					v, ok := m.Get(k)
+					if ok {
+						if v != k {
+							b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := getNextNormalRandom(numWrites)
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+2.3. Lots of writes to sequential keys, few reads, fits to memory
+*/
+func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int64) {
+	currentWriteKey := 0
+	currentReadKey := 0
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i%WriteRatioHigh == 0 {
+					k := currentReadKey
+					currentReadKey = (currentReadKey + 1) % numWrites
+					v, ok := m.Get(k)
+					if ok {
+						if v != k {
+							b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := currentWriteKey
+					currentWriteKey = (currentWriteKey + 1) % numWrites
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+3.1. Lots of writes to uniformly random keys, lots of uniformly random reads,
 fits into memory
 */
 func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
@@ -139,7 +236,69 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int64) {
 }
 
 /*
-*  4. Initialize a large table (fitting into memory)
+3.2. Lots of writes to normally distributed random keys, lots of normally
+distributed random reads, fits into memory
+*/
+func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int64) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Do a read */
+				if i > 0 && i % WriteRatioLow == 0 {
+					key := getNextNormalRandom(numWrites)
+					v, ok := m.Get(key)
+					if ok {
+						if v != key {
+							b.Error("Wrong value for key", key, ". Expect ", key, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do write */
+					k := getNextNormalRandom(numWrites)
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+3.3. Interleaved sequential writes and reads
+*/
+func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int64) {
+	currentKey := 0
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numWrites; i++ {
+				/* Write if i is even, read if i is odd */
+				if i % 2 == 0 {
+					/* Do a read */
+					key := currentKey
+					v, ok := m.Get(key)
+					if ok {
+						if v != key {
+							b.Error("Wrong value for key", key, ". Expect ", key, ". Got ", v)
+						}
+					}
+				} else {
+					/* Do a write */
+					k := currentKey
+					currentKey = (currentKey + 1) % numKeys
+					v := k
+					m.Put(k, v)
+				}
+			}
+		}
+	})
+}
+
+/*
+*  4.1. Initialize a large table (fitting into memory)
 *     (do not test the initialization part),
 *	   then lots of uniformly random reads ->
 *     cache behavior when reading from an unchanging table
@@ -154,6 +313,78 @@ func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int64) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := int64(0); i < numReads; i++ {
 				k := rand.Int63n(numKeys)
+				v, ok := m.Get(k)
+				if ok {
+					if v != k {
+						b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+					}
+				} else {
+					b.Error("Failed to get key ", k)
+				}
+			}
+		}
+	})
+}
+
+/*
+*  4.2. Initialize a large table (fitting into memory)
+*     (do not test the initialization part),
+*	   then lots of normally distributed random reads ->
+*     cache behavior when reading from an unchanging table
+ */
+func benchmarkLotsReadsNormalDist(m IMap, b *testing.B, numKeys, numReads int64) {
+	/* Initialize the map */
+	InitializeMap(numKeys, m)
+	b.ResetTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numReads; i++ {
+				k := getNextNormalRandom(numKeys)
+				v, ok := m.Get(k)
+				if ok {
+					if v != k {
+						b.Error("Wrong value for key", k, ". Expect ", k, ". Got ", v)
+					}
+				} else {
+					b.Error("Failed to get key ", k)
+				}
+			}
+		}
+	})
+}
+
+func getNextNormalRandom(numKeys int) int {
+	mean := numKeys / 2
+	stdDev := numKeys / 6
+	var next int
+	for {
+		next = rand.NormFloat64() * stdDev + mean
+		if next >= 0 && next < numKeys {
+			return int(next)
+		}
+	}
+}
+
+/*
+*  4.3. Initialize a large table (fitting into memory)
+*     (do not test the initialization part),
+*	   then lots of sequential reads ->
+*     cache behavior when reading from an unchanging table
+ */
+func benchmarkLotsReadsSequential(m IMap, b *testing.B, numKeys, numReads int64) {
+	currentKey := 0
+	/* Initialize the map */
+	InitializeMap(numKeys, m)
+	b.ResetTimer()
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			rand.Seed(time.Now().UTC().UnixNano())
+			for i := int64(0); i < numReads; i++ {
+				k := currentKey;
+				currentKey = (currentKey + 1) % numKeys
 				v, ok := m.Get(k)
 				if ok {
 					if v != k {
