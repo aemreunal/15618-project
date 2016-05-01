@@ -48,12 +48,12 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 		k := i
 		v := fmt.Sprintf("%12d", k);
 		m.Put(k, v)
-		j, ok := m.Get(k)
+		v1, ok := m.Get(k)
 		if !ok {
 			b.Error("Failed to get key ", k)
 		}
-		if j != i {
-			b.Error("Should be ", v, ". Got ", j)
+		if v1 != v {
+			b.Error("Should be ", v, ". Got ", v1)
 		}
 	}
 }

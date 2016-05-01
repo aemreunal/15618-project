@@ -211,25 +211,29 @@ func (this *ConcurrentMap) Get(key interface{}) (value interface{}, ok bool) {
 	//if atomic.LoadPointer(&this.kind) == nil {
 	//	return nil, nil
 	//}
-	value = nil
-	if hash, e := hashKey(key, this, false); e != nil {
-		value = this.segmentFor(hash).get(key, hash)
-	}
-	if value != nil {
-		ok = true
-	} else {
+	//if hash, e := hashKey(key, this, false); e != nil {
+	//	ok = false
+	//} else {
+	//	value = this.segmentFor(hash).get(key, hash)
+	//	ok = true
+	//}
+	hash, e := hashKey(key, this, false)
+	if e != nil {
 		ok = false
+	} else {
+		value = this.segmentFor(hash).get(key, hash)
+		ok = value != nil
 	}
 	return
 }
 
 /**
- * Tests if the specified object is a key in this table.
- *
- * @param  key   possible key
- * @return true if and only if the specified object is a key in this table,
- * as determined by the == method; false otherwise.
- */
+* Tests if the specified object is a key in this table.
+*
+* @param  key   possible key
+* @return true if and only if the specified object is a key in this table,
+* as determined by the == method; false otherwise.
+*/
 func (this *ConcurrentMap) ContainsKey(key interface{}) (found bool, err error) {
 	if isNil(key) {
 		return false, NilKeyError
@@ -251,18 +255,18 @@ func (this *ConcurrentMap) ContainsKey(key interface{}) (found bool, err error) 
 }
 
 /**
- * Maps the specified key to the specified value in this table.
- * Neither the key nor the value can be nil.
- *
- * The value can be retrieved by calling the get method
- * with a key that is equal to the original key.
- *
- * @param key with which the specified value is to be associated
- * @param value to be associated with the specified key
- *
- * @return the previous value associated with key, or
- *         nil if there was no mapping for key
- */
+* Maps the specified key to the specified value in this table.
+* Neither the key nor the value can be nil.
+*
+* The value can be retrieved by calling the get method
+* with a key that is equal to the original key.
+*
+* @param key with which the specified value is to be associated
+* @param value to be associated with the specified key
+*
+* @return the previous value associated with key, or
+*         nil if there was no mapping for key
+*/
 func (this *ConcurrentMap) Put(key interface{}, value interface{}) (oldVal interface{}) {
 	if isNil(key) {
 		return nil
@@ -284,16 +288,16 @@ func (this *ConcurrentMap) Put(key interface{}, value interface{}) (oldVal inter
 }
 
 /**
- * If mapping exists for the key, then maps the specified key to the specified value in this table.
- * else will ignore.
- * Neither the key nor the value can be nil.
- *
- * The value can be retrieved by calling the get method
- * with a key that is equal to the original key.
- *
- * @return the previous value associated with the specified key,
- *         or nil if there was no mapping for the key
- */
+* If mapping exists for the key, then maps the specified key to the specified value in this table.
+* else will ignore.
+* Neither the key nor the value can be nil.
+*
+* The value can be retrieved by calling the get method
+* with a key that is equal to the original key.
+*
+* @return the previous value associated with the specified key,
+*         or nil if there was no mapping for the key
+*/
 func (this *ConcurrentMap) PutIfAbsent(key interface{}, value interface{}) (oldVal interface{}, err error) {
 	if isNil(key) {
 		return nil, NilKeyError
@@ -315,19 +319,19 @@ func (this *ConcurrentMap) PutIfAbsent(key interface{}, value interface{}) (oldV
 }
 
 /**
- * Maps the specified key to the value that be returned by specified function in this table.
- * The key can not be nil.
- *
- * The value mapping specified key will be passed into action function as parameter.
- * If mapping does not exists for the key, nil will be passed into action function.
- * If return value by action function is nil, the specified key will be remove from map.
- *
- * @param key with which the specified value is to be associated
- * @param action that be called to generate new value mapping the specified key
- *
- * @return the previous value associated with key, or
- *         nil if there was no mapping for key
- */
+* Maps the specified key to the value that be returned by specified function in this table.
+* The key can not be nil.
+*
+* The value mapping specified key will be passed into action function as parameter.
+* If mapping does not exists for the key, nil will be passed into action function.
+* If return value by action function is nil, the specified key will be remove from map.
+*
+* @param key with which the specified value is to be associated
+* @param action that be called to generate new value mapping the specified key
+*
+* @return the previous value associated with key, or
+*         nil if there was no mapping for key
+*/
 func (this *ConcurrentMap) Update(key interface{}, action func(oldVal interface{}) (newVal interface{})) (oldVal interface{}, err error) {
 	if isNil(key) {
 		return nil, NilKeyError
@@ -349,12 +353,12 @@ func (this *ConcurrentMap) Update(key interface{}, action func(oldVal interface{
 }
 
 /**
- * Copies all of the mappings from the specified map to this one.
- * These mappings replace any mappings that this map had for any of the
- * keys currently in the specified map.
- *
- * @param m mappings to be stored in this map
- */
+* Copies all of the mappings from the specified map to this one.
+* These mappings replace any mappings that this map had for any of the
+* keys currently in the specified map.
+*
+* @param m mappings to be stored in this map
+*/
 func (this *ConcurrentMap) PutAll(m map[interface{}]interface{}) (err error) {
 	if isNil(m) {
 		err = errors.New("Cannot copy nil map")
@@ -366,12 +370,12 @@ func (this *ConcurrentMap) PutAll(m map[interface{}]interface{}) (err error) {
 }
 
 /**
- * Removes the key (and its corresponding value) from this map.
- * This method does nothing if the key is not in the map.
- *
- * @param  key the key that needs to be removed
- * @return the previous value associated with key, or nil if there was no mapping for key
- */
+* Removes the key (and its corresponding value) from this map.
+* This method does nothing if the key is not in the map.
+*
+* @param  key the key that needs to be removed
+* @return the previous value associated with key, or nil if there was no mapping for key
+*/
 func (this *ConcurrentMap) Remove(key interface{}) (oldVal interface{}, ok bool) {
 	if isNil(key) {
 		return nil, false
@@ -391,11 +395,11 @@ func (this *ConcurrentMap) Remove(key interface{}) (oldVal interface{}, ok bool)
 }
 
 /**
- * Removes the mapping for the key and value from this map.
- * This method does nothing if no mapping for the key and value.
- *
- * @return true if mapping be removed, false otherwise
- */
+* Removes the mapping for the key and value from this map.
+* This method does nothing if no mapping for the key and value.
+*
+* @return true if mapping be removed, false otherwise
+*/
 func (this *ConcurrentMap) RemoveEntry(key interface{}, value interface{}) (ok bool, err error) {
 	if isNil(key) {
 		return false, NilKeyError
@@ -417,12 +421,12 @@ func (this *ConcurrentMap) RemoveEntry(key interface{}, value interface{}) (ok b
 }
 
 /**
- * CompareAndReplace executes the compare-and-replace operation.
- * Replaces the value if the mapping exists for the previous and key from this map.
- * This method does nothing if no mapping for the key and value.
- *
- * @return true if value be replaced, false otherwise
- */
+* CompareAndReplace executes the compare-and-replace operation.
+* Replaces the value if the mapping exists for the previous and key from this map.
+* This method does nothing if no mapping for the key and value.
+*
+* @return true if value be replaced, false otherwise
+*/
 func (this *ConcurrentMap) CompareAndReplace(key interface{}, oldVal interface{}, newVal interface{}) (ok bool, err error) {
 	if isNil(key) {
 		return false, NilKeyError
@@ -444,12 +448,12 @@ func (this *ConcurrentMap) CompareAndReplace(key interface{}, oldVal interface{}
 }
 
 /**
- * Replaces the value if the key is in the map.
- * This method does nothing if no mapping for the key.
- *
- * @return the previous value associated with the specified key,
- *         or nil if there was no mapping for the key
- */
+* Replaces the value if the key is in the map.
+* This method does nothing if no mapping for the key.
+*
+* @return the previous value associated with the specified key,
+*         or nil if there was no mapping for the key
+*/
 func (this *ConcurrentMap) Replace(key interface{}, value interface{}) (oldVal interface{}, err error) {
 	if isNil(key) {
 		return nil, NilKeyError
@@ -471,8 +475,8 @@ func (this *ConcurrentMap) Replace(key interface{}, value interface{}) (oldVal i
 }
 
 /**
- * Removes all of the mappings from this map.
- */
+* Removes all of the mappings from this map.
+*/
 func (this *ConcurrentMap) Clear() {
 	for i := 0; i < len(this.segments); i++ {
 		this.segments[i].clear()
@@ -574,7 +578,7 @@ func (this *ConcurrentMap) newSegment(initialCapacity int, lf float32) (s *Segme
 }
 
 func newConcurrentMap3(initialCapacity int,
-	loadFactor float32, concurrencyLevel int) (m *ConcurrentMap) {
+loadFactor float32, concurrencyLevel int) (m *ConcurrentMap) {
 	m = &ConcurrentMap{}
 
 	if !(loadFactor > 0) || initialCapacity < 0 || concurrencyLevel <= 0 {
@@ -619,27 +623,27 @@ func newConcurrentMap3(initialCapacity int,
 }
 
 /**
- * Creates a new, empty map with the specified initial
- * capacity, load factor and concurrency level.
- *
- * @param initialCapacity the initial capacity. The implementation
- * performs internal sizing to accommodate this many elements.
- *
- * @param loadFactor  the load factor threshold, used to control resizing.
- * Resizing may be performed when the average number of elements per
- * bin exceeds this threshold.
- *
- * @param concurrencyLevel the estimated number of concurrently
- * updating threads. The implementation performs internal sizing
- * to try to accommodate this many threads.
- *
- * panic error "IllegalArgumentException" if the initial capacity is
- * negative or the load factor or concurrencyLevel are
- * nonpositive.
- *
- * Creates a new, empty map with a default initial capacity (16),
- * load factor (0.75) and concurrencyLevel (16).
- */
+* Creates a new, empty map with the specified initial
+* capacity, load factor and concurrency level.
+*
+* @param initialCapacity the initial capacity. The implementation
+* performs internal sizing to accommodate this many elements.
+*
+* @param loadFactor  the load factor threshold, used to control resizing.
+* Resizing may be performed when the average number of elements per
+* bin exceeds this threshold.
+*
+* @param concurrencyLevel the estimated number of concurrently
+* updating threads. The implementation performs internal sizing
+* to try to accommodate this many threads.
+*
+* panic error "IllegalArgumentException" if the initial capacity is
+* negative or the load factor or concurrencyLevel are
+* nonpositive.
+*
+* Creates a new, empty map with a default initial capacity (16),
+* load factor (0.75) and concurrencyLevel (16).
+*/
 func NewConcurrentMap(paras ...interface{}) (m *ConcurrentMap) {
 	ok := false
 	cap := DEFAULT_INITIAL_CAPACITY
@@ -669,28 +673,28 @@ func NewConcurrentMap(paras ...interface{}) (m *ConcurrentMap) {
 }
 
 /**
- * Creates a new map with the same mappings as the given map.
- * The map is created with a capacity of 1.5 times the number
- * of mappings in the given map or 16 (whichever is greater),
- * and a default load factor (0.75) and concurrencyLevel (16).
- *
- * @param m the map
- */
+* Creates a new map with the same mappings as the given map.
+* The map is created with a capacity of 1.5 times the number
+* of mappings in the given map or 16 (whichever is greater),
+* and a default load factor (0.75) and concurrencyLevel (16).
+*
+* @param m the map
+*/
 func NewConcurrentMapFromMap(m map[interface{}]interface{}) *ConcurrentMap {
 	cm := newConcurrentMap3(int(math.Max(float64(float32(len(m))/DEFAULT_LOAD_FACTOR+1),
-		float64(DEFAULT_INITIAL_CAPACITY))),
-		DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL)
+	float64(DEFAULT_INITIAL_CAPACITY))),
+	DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL)
 	cm.PutAll(m)
 	return cm
 }
 
 /**
- * ConcurrentHashMap list entry.
- * Note only value field is variable and must use atomic to read/write it, other three fields are read-only after initializing.
- * so can use unsynchronized reader, the Segment.readValueUnderLock method is used as a
- * backup in case a nil (pre-initialized) value is ever seen in
- * an unsynchronized access method.
- */
+* ConcurrentHashMap list entry.
+* Note only value field is variable and must use atomic to read/write it, other three fields are read-only after initializing.
+* so can use unsynchronized reader, the Segment.readValueUnderLock method is used as a
+* backup in case a nil (pre-initialized) value is ever seen in
+* an unsynchronized access method.
+*/
 type Entry struct {
 	key   interface{}
 	hash  uint32
@@ -717,40 +721,40 @@ func (this *Entry) storeValue(v *interface{}) {
 type Segment struct {
 	m *ConcurrentMap //point to concurrentMap.eng, so it is **hashEnginer
 	/**
-	 * The number of elements in this segment's region.
-	 * Must use atomic package's LoadInt32 and StoreInt32 functions to read/write this field
-	 * otherwise read operation may cannot read latest value
-	 */
+	* The number of elements in this segment's region.
+	* Must use atomic package's LoadInt32 and StoreInt32 functions to read/write this field
+	* otherwise read operation may cannot read latest value
+	*/
 	count int32
 
 	/**
-	 * Number of updates that alter the size of the table. This is
-	 * used during bulk-read methods to make sure they see a
-	 * consistent snapshot: If modCounts change during a traversal
-	 * of segments computing size or checking containsValue, then
-	 * we might have an inconsistent view of state so (usually)
-	 * must retry.
-	 */
+	* Number of updates that alter the size of the table. This is
+	* used during bulk-read methods to make sure they see a
+	* consistent snapshot: If modCounts change during a traversal
+	* of segments computing size or checking containsValue, then
+	* we might have an inconsistent view of state so (usually)
+	* must retry.
+	*/
 	modCount int32
 
 	/**
-	 * The table is rehashed when its size exceeds this threshold.
-	 * (The value of this field is always (int)(capacity *
-	 * loadFactor).)
-	 */
+	* The table is rehashed when its size exceeds this threshold.
+	* (The value of this field is always (int)(capacity *
+	* loadFactor).)
+	*/
 	threshold int32
 
 	/**
-	 * The per-segment table.
-	 * Use unsafe.Pointer because must use atomic.LoadPointer function in read operations.
-	 */
+	* The per-segment table.
+	* Use unsafe.Pointer because must use atomic.LoadPointer function in read operations.
+	*/
 	pTable unsafe.Pointer //point to []unsafe.Pointer
 
 	/**
-	 * The load factor for the hash table. Even though this value
-	 * is same for all segments, it is replicated to avoid needing
-	 * links to outer object.
-	 */
+	* The load factor for the hash table. Even though this value
+	* is same for all segments, it is replicated to avoid needing
+	* links to outer object.
+	*/
 	loadFactor float32
 
 	lock *sync.Mutex
@@ -768,18 +772,18 @@ func (this *Segment) rehash() {
 	}
 
 	/*
-	 * Reclassify nodes in each list to new Map.  Because we are
-	 * using power-of-two expansion, the elements from each bin
-	 * must either stay at same index, or move with a power of two
-	 * offset. We eliminate unnecessary node creation by catching
-	 * cases where old nodes can be reused because their next
-	 * fields won't change. Statistically, at the default
-	 * threshold, only about one-sixth of them need cloning when
-	 * a table doubles. The nodes they replace will be garbage
-	 * collectable as soon as they are no longer referenced by any
-	 * reader thread that may be in the midst of traversing table
-	 * right now.
-	 */
+	* Reclassify nodes in each list to new Map.  Because we are
+	* using power-of-two expansion, the elements from each bin
+	* must either stay at same index, or move with a power of two
+	* offset. We eliminate unnecessary node creation by catching
+	* cases where old nodes can be reused because their next
+	* fields won't change. Statistically, at the default
+	* threshold, only about one-sixth of them need cloning when
+	* a table doubles. The nodes they replace will be garbage
+	* collectable as soon as they are no longer referenced by any
+	* reader thread that may be in the midst of traversing table
+	* right now.
+	*/
 
 	newTable := make([]unsafe.Pointer, oldCapacity<<1)
 	atomic.StoreInt32(&this.threshold, int32(float32(len(newTable))*this.loadFactor))
@@ -800,14 +804,14 @@ func (this *Segment) rehash() {
 				newTable[idx] = unsafe.Pointer(e)
 			} else {
 				/* Reuse trailing consecutive sequence at same slot
-				 * 数组扩容后原来数组下标相同（碰撞）的节点可能会计算出不同的新下标
-				 * 如果把碰撞链表中所有节点的新下标列出，并将相邻的新下标相同的节点视为一段
-				 * 那么下面的代码为了提高效率，会循环碰撞链表，找到链表中最后一段首节点（之后所有节点的新下标相同）
-				 * 然后将这个首节点复制到新数组，后续节点因为计算出的新下标相同，所以在扩容后的数组中仍然在同一碰撞链表中
-				 * 所以新的首节点的碰撞链表是正确的
-				 * 新的首节点之外的其他现存碰撞链表上的节点，则重新复制到新节点（这个重要，可以保持旧节点的不变性）后放入新数组
-				 * 这个过程的关键在于维持所有旧节点的next属性不会发生变化，这样才能让无锁的读操作保持线程安全
-				 */
+				* 数组扩容后原来数组下标相同（碰撞）的节点可能会计算出不同的新下标
+				* 如果把碰撞链表中所有节点的新下标列出，并将相邻的新下标相同的节点视为一段
+				* 那么下面的代码为了提高效率，会循环碰撞链表，找到链表中最后一段首节点（之后所有节点的新下标相同）
+				* 然后将这个首节点复制到新数组，后续节点因为计算出的新下标相同，所以在扩容后的数组中仍然在同一碰撞链表中
+				* 所以新的首节点的碰撞链表是正确的
+				* 新的首节点之外的其他现存碰撞链表上的节点，则重新复制到新节点（这个重要，可以保持旧节点的不变性）后放入新数组
+				* 这个过程的关键在于维持所有旧节点的next属性不会发生变化，这样才能让无锁的读操作保持线程安全
+				*/
 				lastRun := e
 				lastIdx := idx
 				for last := next; last != nil; last = last.next {
@@ -834,48 +838,48 @@ func (this *Segment) rehash() {
 }
 
 /**
- * Sets table to new pointer slice that all item points to HashEntry.
- * Call only while holding lock or in constructor.
- */
+* Sets table to new pointer slice that all item points to HashEntry.
+* Call only while holding lock or in constructor.
+*/
 func (this *Segment) setTable(newTable []unsafe.Pointer) {
 	this.threshold = (int32)(float32(len(newTable)) * this.loadFactor)
 	this.pTable = unsafe.Pointer(&newTable)
 }
 
 /**
- * uses atomic to load table and returns.
- * Call while no lock.
- */
+* uses atomic to load table and returns.
+* Call while no lock.
+*/
 func (this *Segment) loadTable() (table []unsafe.Pointer) {
 	return *(*[]unsafe.Pointer)(atomic.LoadPointer(&this.pTable))
 }
 
 /**
- * returns pointer slice that all item points to HashEntry.
- * Call only while holding lock or in constructor.
- */
+* returns pointer slice that all item points to HashEntry.
+* Call only while holding lock or in constructor.
+*/
 func (this *Segment) table() []unsafe.Pointer {
 	return *(*[]unsafe.Pointer)(this.pTable)
 }
 
 /**
- * Returns properly casted first entry of bin for given hash.
- */
+* Returns properly casted first entry of bin for given hash.
+*/
 func (this *Segment) getFirst(hash uint32) *Entry {
 	tab := this.loadTable()
 	return (*Entry)(atomic.LoadPointer(&tab[hash&uint32(len(tab)-1)]))
 }
 
 /**
- * Reads value field of an entry under lock. Called if value
- * field ever appears to be nil. see below code:
- * 		tab[index] = unsafe.Pointer(&Entry{key, hash, unsafe.Pointer(&value), first})
- * go memory model don't explain Entry initialization must be executed before
- * table assignment. So value is nil is possible only if a
- * compiler happens to reorder a HashEntry initialization with
- * its table assignment, which is legal under memory model
- * but is not known to ever occur.
- */
+* Reads value field of an entry under lock. Called if value
+* field ever appears to be nil. see below code:
+* 		tab[index] = unsafe.Pointer(&Entry{key, hash, unsafe.Pointer(&value), first})
+* go memory model don't explain Entry initialization must be executed before
+* table assignment. So value is nil is possible only if a
+* compiler happens to reorder a HashEntry initialization with
+* its table assignment, which is legal under memory model
+* but is not known to ever occur.
+*/
 func (this *Segment) readValueUnderLock(e *Entry) interface{} {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -948,14 +952,14 @@ func (this *Segment) replace(key interface{}, hash uint32, newVal interface{}) (
 }
 
 /**
- * put方法牵涉到count, modCount, pTable三个共享变量的修改
- * 在Java中count和pTable是volatile字段，而modCount不是
- * 由于IsEmpty和Size等操作会读取count, modCount和pTable并且是无锁的，这里有必要对进行并发安全性的分析
- * 在Java中，volatile的读具有Acquire语义，volatile的写具有release语义，而put的最后会写入count，
- * 其他读操作总是会先读取count，由此保证了put中其他的写入操作不会被reorder到写入count之后，而读操作中其他的读取不会被reorder到读count之前
- * 由此保证了多线程情况下读和写线程中看到的操作次序不会发送混乱，
- * 在Golang中，StorePointer内部使用了xchgl指令，具有内存屏障，但是Load操作似乎并未具有明确的acquire语义
- */
+* put方法牵涉到count, modCount, pTable三个共享变量的修改
+* 在Java中count和pTable是volatile字段，而modCount不是
+* 由于IsEmpty和Size等操作会读取count, modCount和pTable并且是无锁的，这里有必要对进行并发安全性的分析
+* 在Java中，volatile的读具有Acquire语义，volatile的写具有release语义，而put的最后会写入count，
+* 其他读操作总是会先读取count，由此保证了put中其他的写入操作不会被reorder到写入count之后，而读操作中其他的读取不会被reorder到读count之前
+* 由此保证了多线程情况下读和写线程中看到的操作次序不会发送混乱，
+* 在Golang中，StorePointer内部使用了xchgl指令，具有内存屏障，但是Load操作似乎并未具有明确的acquire语义
+*/
 func (this *Segment) put(key interface{}, hash uint32, value interface{}, onlyIfAbsent bool, action func(oldValue interface{}) (newVal interface{})) (oldValue interface{}) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -1020,8 +1024,8 @@ func (this *Segment) put(key interface{}, hash uint32, value interface{}, onlyIf
 }
 
 /**
- * Remove; match on key only if value nil, else match both.
- */
+* Remove; match on key only if value nil, else match both.
+*/
 func (this *Segment) remove(key interface{}, hash uint32, value interface{}) (oldValue interface{}) {
 	this.lock.Lock()
 	defer this.lock.Unlock()
@@ -1070,12 +1074,12 @@ func (this *Segment) clear() {
 }
 
 /**
- * Applies a supplemental hash function to a given hashCode, which
- * defends against poor quality hash functions.  This is critical
- * because ConcurrentHashMap uses power-of-two length hash tables,
- * that otherwise encounter collisions for hashCodes that do not
- * differ in lower or upper bits.
- */
+* Applies a supplemental hash function to a given hashCode, which
+* defends against poor quality hash functions.  This is critical
+* because ConcurrentHashMap uses power-of-two length hash tables,
+* that otherwise encounter collisions for hashCodes that do not
+* differ in lower or upper bits.
+*/
 func hash2(h uint32) uint32 {
 	//// Spread bits to regularize both segment and index locations,
 	//// using variant of single-word Wang/Jenkins hash.
