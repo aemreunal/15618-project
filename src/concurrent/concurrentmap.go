@@ -211,12 +211,14 @@ func (this *ConcurrentMap) Get(key interface{}) (value interface{}, ok bool) {
 	//if atomic.LoadPointer(&this.kind) == nil {
 	//	return nil, nil
 	//}
+	value = nil
 	if hash, e := hashKey(key, this, false); e != nil {
-		ok = false
-	} else {
-		ok = true
-		Printf("Get, %v, %v\n", key, hash)
 		value = this.segmentFor(hash).get(key, hash)
+	}
+	if value != nil {
+		ok = true
+	} else {
+		ok = false
 	}
 	return
 }

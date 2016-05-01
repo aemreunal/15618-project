@@ -1,20 +1,20 @@
 package benchmark
 
 import (
-	"testing"
-	"nativemap"
-	"lockmap"
-	"rwlockmap"
-	"pmap"
-	"gotomic"
 	"concurrent"
+	"gotomic"
+	"lockmap"
+	"nativemap"
+	"pmap"
+	"rwlockmap"
+	"testing"
 )
 
 const (
-	NumKeysInLargeMap                 = 1024 * 1024 * 1024 *2 // 2 G
-	NumWritesInWriteOnlyTestLarge     = 1024 * 1024 * 1024 * 2 // 2 G
-	NumWritesInRWTestLarge            = 1024 * 1024 * 1024 * 2 // 2 G
-	NumReadsInReadOnlyTestLarge       = 1024 * 1024 * 1024 * 2 // 2 G
+	NumKeysInLargeMap             = 1024 * 1024 * 1024 * 2 // 2 G
+	NumWritesInWriteOnlyTestLarge = 1024 * 1024 * 1024 * 2 // 2 G
+	NumWritesInRWTestLarge        = 1024 * 1024 * 1024 * 2 // 2 G
+	NumReadsInReadOnlyTestLarge   = 1024 * 1024 * 1024 * 2 // 2 G
 )
 
 /* 5. ================1, 2, 3, 4 but very large tables (>16 GB)===============*/
@@ -39,6 +39,7 @@ func BenchmarkGotomicMapLotsWriteLarge(b *testing.B) {
 func BenchmarkConcurrentMapLotsWriteLarge(b *testing.B) {
 	benchmarkConcurrentWrites(concurrent.NewConcurrentMap(), b, NumWritesInWriteOnlyTestLarge)
 }
+
 /************************** 5_2 Lots of concurrent writes, few reads ***********************************/
 func BenchmarkLockMapLotsWritesFewReadsLarge(b *testing.B) {
 	benchmarkLotsWritesFewReads(lockmap.NewLockMap(), b, NumWritesInRWTestLarge)
@@ -109,5 +110,3 @@ func BenchmarkConcurrentMapLotsReadsLarge(b *testing.B) {
 /* 6. 1, 2, 3, 4 but with a particular set of keys read/wrote more frequently */
 
 /* 7. ========1, 2, 3, 4 but with reading and writing sequential keys=========*/
-
-
