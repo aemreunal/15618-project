@@ -1,10 +1,15 @@
 package main
 
 import (
+	"concurrent"
 	"fmt"
+	"gotomic"
 	"lockmap"
 	"math/rand"
+	"os"
+	"pmap"
 	"runtime"
+	"rwlockmap"
 	"sync"
 )
 
@@ -43,14 +48,88 @@ type iMap interface {
 
 type testFunc func(iMap, int, int)
 
+/*
+ * -------------------------------------------------
+ * Main
+ * -------------------------------------------------
+ */
+
 func main() {
 	// Set num. threads to be equal to num. of logical processors
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// Test concurrentWrites
-	fmt.Println("Testing concurrentWrites")
-	runTest(lockmap.NewLockMap(), numWritesInWriteOnlyTestSmall, numWritesInWriteOnlyTestSmall, concurrentWrites)
+	// Parse arguments
+	if len(os.Args) == 3 {
+		// Passed args:
+		// 1) Program name
+		// 2) Test number
+		// 3) Map type
+		testNum := os.Args[1]
+		mapType := os.Args[2]
+		createAndRunTest(testNum, mapType)
+	} else {
+		printHelpText()
+		os.Exit(0)
+	}
 }
+
+func createAndRunTest(testNum string, mapType string) {
+	// Create test map object
+	var testMap iMap
+	switch mapType {
+	case mapTypeConcurrentMap:
+		testMap = concurrent.NewConcurrentMap()
+	case mapTypeGotomicMap:
+		testMap = gotomic.NewGotomicMap()
+	case mapTypeLockMap:
+		testMap = lockmap.NewLockMap()
+	case mapTypeParallelMap:
+		testMap = pmap.NewParallelMap()
+	case mapTypeRWLockMap:
+		testMap = rwlockmap.NewRWLockMap()
+	default:
+		fmt.Errorf("Invalid map type entered")
+		os.Exit(-1)
+	}
+
+	switch testNum {
+	case "1":
+		fmt.Println("Testing lots of concurrent writes")
+		runTestSingleRW(testMap, numWritesInWriteOnlyTestSmall, numWritesInWriteOnlyTestSmall, concurrentWrites)
+	case "2":
+		fmt.Println("Testing lots of concurrent writes, few concurrent reads")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesFewReads)
+	case "3":
+		fmt.Println("Testing lots of concurrent writes, lots of concurrent reads")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReads)
+	case "4":
+		fmt.Println("Testing lots of concurrent reads")
+		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReads)
+	case "8":
+		fmt.Println("Testing 100 concurrent writers, 10 concurrent readers")
+		runTestConcurrentRW(testMap, 100, 10, concurrentWriterReaders)
+	case "9":
+		fmt.Println("Testing 10 concurrent writers, 100 concurrent readers")
+		runTestConcurrentRW(testMap, 10, 100, concurrentWriterReaders)
+	case "10":
+		fmt.Println("Testing 1 concurrent writers, 100 concurrent readers")
+		runTestConcurrentRW(testMap, 1, 100, concurrentWriterReaders)
+	case "11":
+		fmt.Println("Testing resize behavior")
+		// Pass 0 because values aren't used
+		runTestSingleRW(testMap, 0, 0, concurrentWriteDeleteWrite)
+
+	default:
+		fmt.Errorf("Invalid test number entered")
+		os.Exit(-1)
+	}
+}
+
+/*
+ * -------------------------------------------------
+ * Helper functions
+ * -------------------------------------------------
+ */
 
 /*
  * Initializes a map
@@ -81,7 +160,7 @@ func getNextNormalRandom(upperLimit int) int {
 /*
  * Generic wrapper to run test functions
  */
-func runTest(m iMap, numWrites int, numKeys int, testToRun testFunc) {
+func runTest(m iMap, arg1 int, arg2 int, testToRun testFunc) {
 	// Create waitgroup to wait for goroutines to finish
 	var wg sync.WaitGroup
 	wg.Add(runtime.NumCPU())
@@ -91,12 +170,39 @@ func runTest(m iMap, numWrites int, numKeys int, testToRun testFunc) {
 		go func() {
 			defer wg.Done()
 			// Run the test function
-			testToRun(m, numWrites, numKeys)
+			testToRun(m, arg1, arg2)
 		}()
 	}
 
 	// Wait for goroutines to finish
 	wg.Wait()
+}
+
+/*
+ * Wrapper to run test functions with a single reader/writer per core
+ */
+func runTestSingleRW(m iMap, numIterations int, numKeys int, testToRun testFunc) {
+	runTest(m, numIterations, numKeys, testToRun)
+}
+
+/*
+ * Wrapper to run test functions with concurrent readers and writers per core
+ */
+func runTestConcurrentRW(m iMap, numWriters int, numReaders int, testToRun testFunc) {
+	runTest(m, numWriters, numReaders, testToRun)
+}
+
+/*
+ * Prints console help text
+ */
+func printHelpText() {
+	fmt.Println("Usage: ./app <test_num> <map_type>")
+	fmt.Println("Map types:")
+	fmt.Println("\tchinese")
+	fmt.Println("\tgotomic")
+	fmt.Println("\tlock")
+	fmt.Println("\tparallel")
+	fmt.Println("\trwlock")
 }
 
 /*
