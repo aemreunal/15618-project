@@ -271,6 +271,65 @@ func lotsWritesLotsReadsSequential(m iMap, numWrites int, numKeys int) {
 	}
 }
 
+/*
+ * 4.1
+ */
+func lotsReads(m iMap, numReads int, numKeys int) {
+	initializeMap(numKeys, m)
+	for i := 0; i < numReads; i++ {
+		k := rand.Intn(numKeys)
+		v, ok := m.Get(k)
+		if ok {
+			expectedV := fmt.Sprintf("%12d", k)
+			if v != expectedV {
+				fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+			}
+		} else {
+			fmt.Errorf("Failed to get key ", k)
+		}
+	}
+}
+
+/*
+ * 4.2
+ */
+func lotsReadsNormalDist(m iMap, numReads int, numKeys int) {
+	initializeMap(numKeys, m)
+	for i := 0; i < numReads; i++ {
+		k := getNextNormalRandom(numKeys)
+		v, ok := m.Get(k)
+		if ok {
+			expectedV := fmt.Sprintf("%12d", k)
+			if v != expectedV {
+				fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+			}
+		} else {
+			fmt.Errorf("Failed to get key ", k)
+		}
+	}
+}
+
+/*
+ * 4.3
+ */
+func lotsReadsSequential(m iMap, numReads int, numKeys int) {
+	currentKey := 0
+	initializeMap(numKeys, m)
+	for i := 0; i < numReads; i++ {
+		k := currentKey
+		currentKey = (currentKey + 1) % numKeys
+		v, ok := m.Get(k)
+		if ok {
+			expectedV := fmt.Sprintf("%12d", k)
+			if v != expectedV {
+				fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+			}
+		} else {
+			fmt.Errorf("Failed to get key ", k)
+		}
+	}
+}
+
 // /*
 //  * 1.
 //  */
