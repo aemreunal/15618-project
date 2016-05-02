@@ -8,14 +8,29 @@ import (
 	"sync"
 )
 
+/*
+ * -------------------------------------------------
+ * Types & Constants
+ * -------------------------------------------------
+ */
+
 const (
-	numWritesInWriteOnlyTestSmall     = 1024 * 1024 * 16 // 16 M
-	numWritesInRWTestSmall            = 1024 * 1024 * 16 // 16 M
-	numReadsInReadOnlyTestSmall       = 1024 * 1024 * 16 // 16 M
+	mapTypeConcurrentMap              = "chinese"
+	mapTypeGotomicMap                 = "gotomic"
+	mapTypeLockMap                    = "lock"
+	mapTypeParallelMap                = "parallel"
+	mapTypeRWLockMap                  = "rwlock"
 	numIterationInConcurrentReadWrite = 10 * 1024 * 16
-	numWriteDeleteIter                = 5
-	numKeysInBigMap                   = 1024 * 1024 * 16 // 16 M
+	numKeysInBigMap                   = 1024 * 1024 * 16       // 16 M
+	numKeysInLargeMap                 = 1024 * 1024 * 1024 * 2 // 2 G
 	numKeysInSmallMap                 = 1024 * 16
+	numReadsInReadOnlyTestLarge       = 1024 * 1024 * 1024 * 2 // 2 G
+	numReadsInReadOnlyTestSmall       = 1024 * 1024 * 16       // 16 M
+	numWriteDeleteIter                = 5
+	numWritesInRWTestLarge            = 1024 * 1024 * 1024 * 2 // 2 G
+	numWritesInRWTestSmall            = 1024 * 1024 * 16       // 16 M
+	numWritesInWriteOnlyTestLarge     = 1024 * 1024 * 1024 * 2 // 2 G
+	numWritesInWriteOnlyTestSmall     = 1024 * 1024 * 16       // 16 M
 	writeRatioHigh                    = 1000
 	writeRatioLow                     = 2
 )
