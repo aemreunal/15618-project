@@ -85,6 +85,39 @@ func runTest(m iMap, numWrites int, numKeys int, testToRun testFunc) {
 }
 
 /*
+ * -------------------------------------------------
+ * Helper Goroutines
+ * -------------------------------------------------
+ */
+
+func writer(do chan bool, done chan bool, m iMap, numKeys int, numWrites int) {
+	<-do
+	for i := 0; i < numWrites; i++ {
+		k := rand.Intn(numKeys)
+		v := fmt.Sprintf("%12d", k)
+		m.Put(k, v)
+	}
+	done <- true
+}
+
+func reader(do chan bool, done chan bool, m iMap, numKeys int, numReads int) {
+	<-do
+	for i := 0; i < numReads; i++ {
+		k := rand.Intn(numKeys)
+		v, ok := m.Get(k)
+		if ok {
+			expectedV := fmt.Sprintf("%12d", k)
+			if v != expectedV {
+				fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+			}
+		} else {
+			fmt.Errorf("Failed to get key ", k)
+		}
+	}
+	done <- true
+}
+
+/*
  * 1.1
  */
 func concurrentWrites(m iMap, numWrites int, numKeys int) {
@@ -330,9 +363,42 @@ func lotsReadsSequential(m iMap, numReads int, numKeys int) {
 	}
 }
 
-// /*
-//  * 1.
-//  */
-// func func_name(m IMap, numWrites int, numKeys int) {
+/*
+ * 8/9/10
+ */
+func concurrentWriterReaders(m iMap, numWriters int, numReaders int) {
+	do := make(chan bool)
+	done := make(chan bool)
+	initializeMap(numKeysInSmallMap, m)
 
-// }
+	/* Start writers */
+	for i := 0; i < numWriters; i++ {
+		go writer(do, done, m, numKeysInSmallMap, numIterationInConcurrentReadWrite)
+	}
+	/* Start readers */
+	for i := 0; i < numReaders; i++ {
+		go reader(do, done, m, numKeysInSmallMap, numIterationInConcurrentReadWrite)
+	}
+
+	close(do)
+	/* Readers/Writers finish */
+	for i := 0; i < numWriters+numReaders; i++ {
+		<-done
+	}
+}
+
+/*
+ * 11
+ */
+func concurrentWriteDeleteWrite(m iMap, numWrites int, numKeys int) {
+	for i := 0; i < numWriteDeleteIter; i++ {
+		for i := 0; i < numKeysInSmallMap; i++ {
+			k := i
+			v := fmt.Sprintf("%12d", k)
+			m.Put(k, v)
+		}
+		for i := 0; i < numKeysInSmallMap; i++ {
+			m.Remove(i)
+		}
+	}
+}
