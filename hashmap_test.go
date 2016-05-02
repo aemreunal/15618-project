@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"concurrent"
+	"fmt"
 	"gotomic"
 	"lockmap"
 	"math/rand"
@@ -11,7 +12,6 @@ import (
 	"rwlockmap"
 	"testing"
 	"time"
-	"fmt"
 )
 
 /* A key is a int which is 4 bytes. A value is a string which is 12 bytes.
@@ -38,7 +38,7 @@ type IMap interface {
 func InitializeMap(nKeys int, m IMap) {
 	for i := 0; i < nKeys; i++ {
 		k := i
-		v := fmt.Sprintf("%12d", k);
+		v := fmt.Sprintf("%12d", k)
 		m.Put(k, v)
 	}
 }
@@ -46,7 +46,7 @@ func InitializeMap(nKeys int, m IMap) {
 func benchmarkPutGetBasic(m IMap, b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		k := i
-		v := fmt.Sprintf("%12d", k);
+		v := fmt.Sprintf("%12d", k)
 		m.Put(k, v)
 		v1, ok := m.Get(k)
 		if !ok {
@@ -58,9 +58,10 @@ func benchmarkPutGetBasic(m IMap, b *testing.B) {
 	}
 }
 
-/* 1.1. Lots of writes to uniformly random keys, no reads, fits to memory ->
-helps test cache misses for those keys
-*/
+/*
+ * 1.1. Lots of writes to uniformly random keys, no reads, fits to memory ->
+ * helps test cache misses for those keys
+ */
 func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -68,16 +69,17 @@ func benchmarkConcurrentWrites(m IMap, b *testing.B, numWrites int) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := 0; i < numWrites; i++ {
 				k := rand.Int()
-				v := fmt.Sprintf("%12d", k);
+				v := fmt.Sprintf("%12d", k)
 				m.Put(k, v)
 			}
 		}
 	})
 }
 
-/* 1.2. Lots of writes to normally random keys, no reads, fits to memory ->
-helps test cache misses for those keys
-*/
+/*
+ * 1.2. Lots of writes to normally random keys, no reads, fits to memory ->
+ * helps test cache misses for those keys
+ */
 func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -85,16 +87,17 @@ func benchmarkConcurrentWritesNormalDist(m IMap, b *testing.B, numWrites int) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := 0; i < numWrites; i++ {
 				k := getNextNormalRandom(numWrites)
-				v := fmt.Sprintf("%12d", k);
+				v := fmt.Sprintf("%12d", k)
 				m.Put(k, v)
 			}
 		}
 	})
 }
 
-/* 1.3. Lots of writes to sequential keys, no reads, fits to memory ->
-helps test cache misses for those keys
-*/
+/*
+ * 1.3. Lots of writes to sequential keys, no reads, fits to memory ->
+ * helps test cache misses for those keys
+ */
 func benchmarkConcurrentWritesSequential(m IMap, b *testing.B, numWrites int) {
 	currentKey := 0
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -104,7 +107,7 @@ func benchmarkConcurrentWritesSequential(m IMap, b *testing.B, numWrites int) {
 			for i := 0; i < numWrites; i++ {
 				k := currentKey
 				currentKey = (currentKey + 1) % numWrites
-				v := fmt.Sprintf("%12d", k);
+				v := fmt.Sprintf("%12d", k)
 				m.Put(k, v)
 			}
 		}
@@ -112,8 +115,8 @@ func benchmarkConcurrentWritesSequential(m IMap, b *testing.B, numWrites int) {
 }
 
 /*
-2.1. Lots of writes to uniformly random keys, few reads, fits to memory
-*/
+ * 2.1. Lots of writes to uniformly random keys, few reads, fits to memory
+ */
 func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -125,7 +128,7 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int) {
 					k := rand.Int()
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 						}
@@ -133,7 +136,7 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int) {
 				} else {
 					/* Do write */
 					k := rand.Int()
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -142,8 +145,8 @@ func benchmarkLotsWritesFewReads(m IMap, b *testing.B, numWrites int) {
 }
 
 /*
-2.2. Lots of writes to normally random keys, few reads, fits to memory
-*/
+ * 2.2. Lots of writes to normally random keys, few reads, fits to memory
+ */
 func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -155,7 +158,7 @@ func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int) 
 					k := getNextNormalRandom(numWrites)
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 						}
@@ -163,7 +166,7 @@ func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int) 
 				} else {
 					/* Do write */
 					k := getNextNormalRandom(numWrites)
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -172,8 +175,8 @@ func benchmarkLotsWritesFewReadsNormalDist(m IMap, b *testing.B, numWrites int) 
 }
 
 /*
-2.3. Lots of writes to sequential keys, few reads, fits to memory
-*/
+ * 2.3. Lots of writes to sequential keys, few reads, fits to memory
+ */
 func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int) {
 	currentWriteKey := 0
 	currentReadKey := 0
@@ -188,7 +191,7 @@ func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int) 
 					currentReadKey = (currentReadKey + 1) % numWrites
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 						}
@@ -197,7 +200,7 @@ func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int) 
 					/* Do write */
 					k := currentWriteKey
 					currentWriteKey = (currentWriteKey + 1) % numWrites
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -206,9 +209,9 @@ func benchmarkLotsWritesFewReadsSequential(m IMap, b *testing.B, numWrites int) 
 }
 
 /*
-3.1. Lots of writes to uniformly random keys, lots of uniformly random reads,
-fits into memory
-*/
+ * 3.1. Lots of writes to uniformly random keys, lots of uniformly random reads,
+ * fits into memory
+ */
 func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -216,11 +219,11 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := 0; i < numWrites; i++ {
 				/* Do a read */
-				if i > 0 && i % WriteRatioLow == 0 {
+				if i > 0 && i%WriteRatioLow == 0 {
 					k := rand.Int()
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 						}
@@ -228,7 +231,7 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int) {
 				} else {
 					/* Do write */
 					k := rand.Int()
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -237,9 +240,9 @@ func benchmarkLotsWritesLotsReads(m IMap, b *testing.B, numWrites int) {
 }
 
 /*
-3.2. Lots of writes to normally distributed random keys, lots of normally
-distributed random reads, fits into memory
-*/
+ * 3.2. Lots of writes to normally distributed random keys, lots of normally
+ * distributed random reads, fits into memory
+ */
 func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	b.RunParallel(func(pb *testing.PB) {
@@ -251,7 +254,7 @@ func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int)
 					k := getNextNormalRandom(numWrites)
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
@@ -260,7 +263,7 @@ func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int)
 				} else {
 					/* Do write */
 					k := getNextNormalRandom(numWrites)
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -269,8 +272,8 @@ func benchmarkLotsWritesLotsReadsNormalDist(m IMap, b *testing.B, numWrites int)
 }
 
 /*
-3.3. Interleaved sequential writes and reads
-*/
+ * 3.3. Interleaved sequential writes and reads
+ */
 func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int) {
 	currentKey := 0
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -284,7 +287,7 @@ func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int)
 					k := currentKey
 					v, ok := m.Get(k)
 					if ok {
-						expectedV := fmt.Sprintf("%12d", k);
+						expectedV := fmt.Sprintf("%12d", k)
 						if v != expectedV {
 							b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 						}
@@ -293,7 +296,7 @@ func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int)
 					/* Do a write */
 					k := currentKey
 					currentKey = (currentKey + 1) % numWrites
-					v := fmt.Sprintf("%12d", k);
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 			}
@@ -302,10 +305,10 @@ func benchmarkLotsWritesLotsReadsSequential(m IMap, b *testing.B, numWrites int)
 }
 
 /*
-*  4.1. Initialize a large table (fitting into memory)
-*     (do not test the initialization part),
-*	   then lots of uniformly random reads ->
-*     cache behavior when reading from an unchanging table
+ *  4.1. Initialize a large table (fitting into memory)
+ *     (do not test the initialization part),
+ *	   then lots of uniformly random reads ->
+ *     cache behavior when reading from an unchanging table
  */
 func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int) {
 	/* Initialize the map */
@@ -319,7 +322,7 @@ func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int) {
 				k := rand.Intn(numKeys)
 				v, ok := m.Get(k)
 				if ok {
-					expectedV := fmt.Sprintf("%12d", k);
+					expectedV := fmt.Sprintf("%12d", k)
 					if v != expectedV {
 						b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 					}
@@ -332,11 +335,11 @@ func benchmarkLotsReads(m IMap, b *testing.B, numKeys, numReads int) {
 }
 
 /*
-*  4.2. Initialize a large table (fitting into memory)
-*     (do not test the initialization part),
-*	   then lots of normally distributed random reads ->
-*     cache behavior when reading from an unchanging table
-*/
+ *  4.2. Initialize a large table (fitting into memory)
+ *     (do not test the initialization part),
+ *	   then lots of normally distributed random reads ->
+ *     cache behavior when reading from an unchanging table
+ */
 func benchmarkLotsReadsNormalDist(m IMap, b *testing.B, numKeys, numReads int) {
 	/* Initialize the map */
 	InitializeMap(numKeys, m)
@@ -349,7 +352,7 @@ func benchmarkLotsReadsNormalDist(m IMap, b *testing.B, numKeys, numReads int) {
 				k := getNextNormalRandom(numKeys)
 				v, ok := m.Get(k)
 				if ok {
-					expectedV := fmt.Sprintf("%12d", k);
+					expectedV := fmt.Sprintf("%12d", k)
 					if v != expectedV {
 						b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 					}
@@ -374,11 +377,11 @@ func getNextNormalRandom(numKeys int) int {
 }
 
 /*
-*  4.3. Initialize a large table (fitting into memory)
-*     (do not test the initialization part),
-*	   then lots of sequential reads ->
-*     cache behavior when reading from an unchanging table
-*/
+ *  4.3. Initialize a large table (fitting into memory)
+ *     (do not test the initialization part),
+ *	   then lots of sequential reads ->
+ *     cache behavior when reading from an unchanging table
+ */
 func benchmarkLotsReadsSequential(m IMap, b *testing.B, numKeys, numReads int) {
 	currentKey := 0
 	/* Initialize the map */
@@ -393,7 +396,7 @@ func benchmarkLotsReadsSequential(m IMap, b *testing.B, numKeys, numReads int) {
 				currentKey = (currentKey + 1) % numKeys
 				v, ok := m.Get(k)
 				if ok {
-					expectedV := fmt.Sprintf("%12d", k);
+					expectedV := fmt.Sprintf("%12d", k)
 					if v != expectedV {
 						b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 					}
@@ -409,7 +412,7 @@ func Writer(do, done chan bool, m IMap, nKeys, numWrites int, b *testing.B) {
 	<-do
 	for i := 0; i < numWrites; i++ {
 		k := rand.Intn(nKeys)
-		v := fmt.Sprintf("%12d", k);
+		v := fmt.Sprintf("%12d", k)
 		m.Put(k, v)
 	}
 	done <- true
@@ -421,7 +424,7 @@ func Reader(do, done chan bool, m IMap, nKeys, numReads int, b *testing.B) {
 		k := rand.Intn(nKeys)
 		v, ok := m.Get(k)
 		if ok {
-			expectedV := fmt.Sprintf("%12d", k);
+			expectedV := fmt.Sprintf("%12d", k)
 			if v != expectedV {
 				b.Error("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
 			}
@@ -433,8 +436,8 @@ func Reader(do, done chan bool, m IMap, nKeys, numReads int, b *testing.B) {
 }
 
 /*
-*  8/9/10. n1 concurrent writers, n2 readers
-*/
+ *  8/9/10. n1 concurrent writers, n2 readers
+ */
 func benchmarkConcurrentWriterReaders(numWriters, numReaders int, m IMap, b *testing.B) {
 	/* Set the maximum number of CPUs that can be executing simultaneously */
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -459,10 +462,10 @@ func benchmarkConcurrentWriterReaders(numWriters, numReaders int, m IMap, b *tes
 }
 
 /*
-*  11. Write a lot, then delete a lot, then write a lot, etc. ->
-*      helps test resize behavior (assuming the implementation properly frees
-*      the memory and resizes the data structures)
-*/
+ *  11. Write a lot, then delete a lot, then write a lot, etc. ->
+ *      helps test resize behavior (assuming the implementation properly frees
+ *      the memory and resizes the data structures)
+ */
 func benchmarkConcurrentWriteDeleteWrite(m IMap, b *testing.B) {
 	b.ResetTimer()
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -471,8 +474,8 @@ func benchmarkConcurrentWriteDeleteWrite(m IMap, b *testing.B) {
 			rand.Seed(time.Now().UTC().UnixNano())
 			for i := 0; i < NumWriteDeleteIter; i++ {
 				for i := 0; i < NumKeysInSmallMap; i++ {
-					k := i;
-					v := fmt.Sprintf("%12d", k);
+					k := i
+					v := fmt.Sprintf("%12d", k)
 					m.Put(k, v)
 				}
 				for i := 0; i < NumKeysInSmallMap; i++ {
