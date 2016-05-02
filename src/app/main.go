@@ -184,6 +184,82 @@ func lotsWritesFewReadsSequential(m IMap, numWrites int, numKeys int) {
 	}
 }
 
+/*
+ * 3.1
+ */
+func lotsWritesLotsReads(m IMap, numWrites int, numKeys int) {
+	for i := 0; i < numWrites; i++ {
+		if i > 0 && i%WriteRatioLow == 0 {
+			/* Do a read */
+			k := rand.Int()
+			v, ok := m.Get(k)
+			if ok {
+				expectedV := fmt.Sprintf("%12d", k)
+				if v != expectedV {
+					fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+				}
+			}
+		} else {
+			/* Do write */
+			k := rand.Int()
+			v := fmt.Sprintf("%12d", k)
+			m.Put(k, v)
+		}
+	}
+}
+
+/*
+ * 3.2
+ */
+func lotsWritesLotsReadsNormalDist(m IMap, numWrites int, numKeys int) {
+	for i := 0; i < numWrites; i++ {
+		if i > 0 && i%WriteRatioLow == 0 {
+			/* Do a read */
+			k := getNextNormalRandom(numWrites)
+			v, ok := m.Get(k)
+			if ok {
+				expectedV := fmt.Sprintf("%12d", k)
+
+				if v != expectedV {
+					fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+				}
+			}
+		} else {
+			/* Do write */
+			k := getNextNormalRandom(numWrites)
+			v := fmt.Sprintf("%12d", k)
+			m.Put(k, v)
+		}
+	}
+}
+
+/*
+ * 3.3
+ */
+func lotsWritesLotsReadsSequential(m IMap, numWrites int, numKeys int) {
+	currentKey := 0
+	for i := 0; i < numWrites; i++ {
+		/* Write if i is even, read if i is odd */
+		if i%2 == 0 {
+			/* Do a read */
+			k := currentKey
+			v, ok := m.Get(k)
+			if ok {
+				expectedV := fmt.Sprintf("%12d", k)
+				if v != expectedV {
+					fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+				}
+			}
+		} else {
+			/* Do a write */
+			k := currentKey
+			currentKey = (currentKey + 1) % numWrites
+			v := fmt.Sprintf("%12d", k)
+			m.Put(k, v)
+		}
+	}
+}
+
 // /*
 //  * 1.
 //  */
