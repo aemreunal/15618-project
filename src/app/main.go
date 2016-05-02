@@ -71,7 +71,7 @@ func runTest(m IMap, numWrites int, numKeys int, testToRun testFunc) {
 func concurrentWrites(m IMap, numWrites int, numKeys int) {
 	for i := 0; i < numWrites; i++ {
 		k := rand.Int()
-		v := k
+		v := fmt.Sprintf("%12d", k)
 		m.Put(k, v)
 	}
 }
@@ -82,7 +82,7 @@ func concurrentWrites(m IMap, numWrites int, numKeys int) {
 func concurrentWritesNormalDist(m IMap, numWrites int, numKeys int) {
 	for i := 0; i < numWrites; i++ {
 		k := getNextNormalRandom(numWrites)
-		v := k
+		v := fmt.Sprintf("%12d", k)
 		m.Put(k, v)
 	}
 }
