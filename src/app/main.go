@@ -9,7 +9,15 @@ import (
 )
 
 const (
-	NumWritesInWriteOnlyTestSmall = 1024 * 1024 * 16 // 16 M
+	NumWritesInWriteOnlyTestSmall     = 1024 * 1024 * 16 // 16 M
+	NumWritesInRWTestSmall            = 1024 * 1024 * 16 // 16 M
+	NumReadsInReadOnlyTestSmall       = 1024 * 1024 * 16 // 16 M
+	NumIterationInConcurrentReadWrite = 10 * 1024 * 16
+	NumWriteDeleteIter                = 5
+	NumKeysInBigMap                   = 1024 * 1024 * 16 // 16 M
+	NumKeysInSmallMap                 = 1024 * 16
+	WriteRatioHigh                    = 1000
+	WriteRatioLow                     = 2
 )
 
 type IMap interface {
@@ -33,12 +41,12 @@ func main() {
  * Normally distributed random number generator
  */
 func getNextNormalRandom(upperLimit int) int {
-	mean := upperLimit / 2
-	stdDev := upperLimit / 6
-	var next int
+	mean := float64(upperLimit / 2)
+	stdDev := float64(upperLimit / 6)
+	var next float64
 	for {
 		next = rand.NormFloat64()*stdDev + mean
-		if next >= 0 && next < upperLimit {
+		if next >= 0 && int(next) < upperLimit {
 			return int(next)
 		}
 	}
@@ -87,8 +95,45 @@ func concurrentWritesNormalDist(m IMap, numWrites int, numKeys int) {
 	}
 }
 
+/*
+ * 1.3
+ */
+func concurrentWritesSequential(m IMap, numWrites int, numKeys int) {
+	currentKey := 0
+	for i := 0; i < numWrites; i++ {
+		k := currentKey
+		currentKey = (currentKey + 1) % numWrites
+		v := fmt.Sprintf("%12d", k)
+		m.Put(k, v)
+	}
+}
+
+/*
+ * 2.1
+ */
+func lotsWritesFewReads(m IMap, numWrites int, numKeys int) {
+	for i := 0; i < numWrites; i++ {
+		if i > 0 && i%WriteRatioHigh == 0 {
+			/* Do a read */
+			k := rand.Int()
+			v, ok := m.Get(k)
+			if ok {
+				expectedV := fmt.Sprintf("%12d", k)
+				if v != expectedV {
+					fmt.Errorf("Wrong value for key", k, ". Expect ", expectedV, ". Got ", v)
+				}
+			}
+		} else {
+			/* Do write */
+			k := rand.Int()
+			v := fmt.Sprintf("%12d", k)
+			m.Put(k, v)
+		}
+	}
+}
+
 // /*
-//  * 1.2
+//  * 1.
 //  */
 // func func_name(m IMap, numWrites int, numKeys int) {
 
