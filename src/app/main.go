@@ -171,11 +171,25 @@ func createAndRunTest(testNum string, mapType string) {
  * Initializes a map
  */
 func initializeMap(nKeys int, m iMap) {
-	for i := 0; i < nKeys; i++ {
-		k := i
-		v := fmt.Sprintf("%12d", k)
-		m.Put(k, v)
+	var wg sync.WaitGroup
+	wg.Add(runtime.NumCPU())
+	keyPerCpu := nKeys / runtime.NumCPU()
+	// Create goroutines
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go func(id int) {
+			defer wg.Done()
+			start := id *keyPerCpu
+			end := start + keyPerCpu
+			for i := start; i < end; i++ {
+				k := i
+				v := fmt.Sprintf("%12d", k)
+				m.Put(k, v)
+			}
+		}(i)
 	}
+
+	// Wait for goroutines to finish
+	wg.Wait()
 }
 
 /*
