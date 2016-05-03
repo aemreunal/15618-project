@@ -104,6 +104,7 @@ func createAndRunTest(testNum string, mapType string) {
 		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReads)
 	case "4":
 		fmt.Println("Testing lots of concurrent reads")
+		initializeMap(numKeysInBigMap, testMap)
 		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReads)
 	case "5.1":
 		fmt.Println("Testing 1-lots of concurrent writes in large data set.")
@@ -116,6 +117,7 @@ func createAndRunTest(testNum string, mapType string) {
 		runTestSingleRW(testMap, numWritesInRWTestLarge, numWritesInRWTestLarge, lotsWritesLotsReads)
 	case "5.4":
 		fmt.Println("Testing 4-lots of concurrent reads in large data set.")
+		initializeMap(numKeysInLargeMap, testMap)
 		runTestSingleRW(testMap, numReadsInReadOnlyTestLarge, numKeysInLargeMap, lotsReads)
 	case "6.1":
 		fmt.Println("Testing 1-lots of concurrent writes in normal distribution keys.")
@@ -128,6 +130,7 @@ func createAndRunTest(testNum string, mapType string) {
 		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReadsNormalDist)
 	case "6.4":
 		fmt.Println("Testing 4-lots of concurrent reads in normal distribution keys.")
+		initializeMap(numKeysInBigMap, testMap)
 		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReadsNormalDist)
 	case "7.1":
 		fmt.Println("Testing 1-lots of concurrent writes in sequential keys.")
@@ -140,15 +143,19 @@ func createAndRunTest(testNum string, mapType string) {
 		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReadsNormalDist)
 	case "7.4":
 		fmt.Println("Testing 4-lots of concurrent reads in sequential keys.")
+		initializeMap(numKeysInBigMap, testMap)
 		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReadsNormalDist)
 	case "8":
 		fmt.Println("Testing 100 concurrent writers, 10 concurrent readers")
+		initializeMap(numKeysInSmallMap, testMap)
 		runTestConcurrentRW(testMap, 100, 10, concurrentWriterReaders)
 	case "9":
 		fmt.Println("Testing 10 concurrent writers, 100 concurrent readers")
+		initializeMap(numKeysInSmallMap, testMap)
 		runTestConcurrentRW(testMap, 10, 100, concurrentWriterReaders)
 	case "10":
 		fmt.Println("Testing 1 concurrent writers, 100 concurrent readers")
+		initializeMap(numKeysInSmallMap, testMap)
 		runTestConcurrentRW(testMap, 1, 100, concurrentWriterReaders)
 	case "11":
 		fmt.Println("Testing resize behavior")
@@ -479,7 +486,6 @@ func lotsWritesLotsReadsSequential(m iMap, numWrites int, numKeys int) {
  * 4.1
  */
 func lotsReads(m iMap, numReads int, numKeys int) {
-	initializeMap(numKeys, m)
 	for i := 0; i < numReads; i++ {
 		k := rand.Intn(numKeys)
 		v, ok := m.Get(k)
@@ -498,7 +504,6 @@ func lotsReads(m iMap, numReads int, numKeys int) {
  * 4.2
  */
 func lotsReadsNormalDist(m iMap, numReads int, numKeys int) {
-	initializeMap(numKeys, m)
 	for i := 0; i < numReads; i++ {
 		k := getNextNormalRandom(numKeys)
 		v, ok := m.Get(k)
@@ -518,7 +523,6 @@ func lotsReadsNormalDist(m iMap, numReads int, numKeys int) {
  */
 func lotsReadsSequential(m iMap, numReads int, numKeys int) {
 	currentKey := 0
-	initializeMap(numKeys, m)
 	for i := 0; i < numReads; i++ {
 		k := currentKey
 		currentKey = (currentKey + 1) % numKeys
@@ -540,7 +544,6 @@ func lotsReadsSequential(m iMap, numReads int, numKeys int) {
 func concurrentWriterReaders(m iMap, numWriters int, numReaders int) {
 	do := make(chan bool)
 	done := make(chan bool)
-	initializeMap(numKeysInSmallMap, m)
 
 	/* Start writers */
 	for i := 0; i < numWriters; i++ {
