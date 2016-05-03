@@ -105,6 +105,42 @@ func createAndRunTest(testNum string, mapType string) {
 	case "4":
 		fmt.Println("Testing lots of concurrent reads")
 		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReads)
+	case "5.1":
+		fmt.Println("Testing 1-lots of concurrent writes in large data set.")
+		runTestSingleRW(testMap, numWritesInWriteOnlyTestLarge, numWritesInWriteOnlyTestLarge, concurrentWrites)
+	case "5.2":
+		fmt.Println("Testing 2-concurrent writes, few concurrent reads in large data set.")
+		runTestSingleRW(testMap, numWritesInRWTestLarge, numWritesInRWTestLarge, lotsWritesFewReads)
+	case "5.3":
+		fmt.Println("Testing 3-concurrent writes, lots of concurrent reads in large data set.")
+		runTestSingleRW(testMap, numWritesInRWTestLarge, numWritesInRWTestLarge, lotsWritesLotsReads)
+	case "5.4":
+		fmt.Println("Testing 4-lots of concurrent reads in large data set.")
+		runTestSingleRW(testMap, numReadsInReadOnlyTestLarge, numKeysInLargeMap, lotsReads)
+	case "6.1":
+		fmt.Println("Testing 1-lots of concurrent writes in normal distribution keys.")
+		runTestSingleRW(testMap, numWritesInWriteOnlyTestSmall, numWritesInWriteOnlyTestSmall, concurrentWritesNormalDist)
+	case "6.2":
+		fmt.Println("Testing 2-concurrent writes, few concurrent reads in normal distribution keys.")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesFewReadsNormalDist)
+	case "6.3":
+		fmt.Println("Testing 3-concurrent writes, lots of concurrent reads in normal distribution keys.")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReadsNormalDist)
+	case "6.4":
+		fmt.Println("Testing 4-lots of concurrent reads in normal distribution keys.")
+		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReadsNormalDist)
+	case "7.1":
+		fmt.Println("Testing 1-lots of concurrent writes in sequential keys.")
+		runTestSingleRW(testMap, numWritesInWriteOnlyTestSmall, numWritesInWriteOnlyTestSmall, concurrentWritesNormalDist)
+	case "7.2":
+		fmt.Println("Testing 2-concurrent writes, few concurrent reads in sequential keys.")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesFewReadsNormalDist)
+	case "7.3":
+		fmt.Println("Testing 3-concurrent writes, lots of concurrent reads in sequential keys.")
+		runTestSingleRW(testMap, numWritesInRWTestSmall, numWritesInRWTestSmall, lotsWritesLotsReadsNormalDist)
+	case "7.4":
+		fmt.Println("Testing 4-lots of concurrent reads in sequential keys.")
+		runTestSingleRW(testMap, numReadsInReadOnlyTestSmall, numKeysInBigMap, lotsReadsNormalDist)
 	case "8":
 		fmt.Println("Testing 100 concurrent writers, 10 concurrent readers")
 		runTestConcurrentRW(testMap, 100, 10, concurrentWriterReaders)
